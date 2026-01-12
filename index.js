@@ -14,7 +14,7 @@ import {
 // ===== CONFIG =====
 const MIN_ROLE_ID = '1460301154104901687'; // minimum role or higher for commands
 const RECRUIT_ROLE_ID = '1460301162535321633'; // role given on +trigger Join
-const WELCOME_CHANNEL_ID = '1460301204440617284'; // channel for welcome announcement
+const WELCOME_CHANNEL_ID = '1460301222446764204'; // channel for welcome announcement
 
 // ===== IN-MEMORY STORAGE =====
 const vouchData = new Map<string, number>();
@@ -48,7 +48,6 @@ export function startBot() {
     const lower = message.content.toLowerCase();
 
     // ===== PERMISSION CHECK =====
-    // Ensure member is available
     if (!message.member) return;
     
     const minRole = message.guild.roles.cache.get(MIN_ROLE_ID);
@@ -177,8 +176,6 @@ export function startBot() {
 
     // ===== +setvouches =====
     if (lower.startsWith('+setvouches')) {
-      // Permission check already done above for 'restricted' commands
-      
       const targetUser = message.mentions.users.first();
       if (!targetUser) return message.reply('Please mention a user to set their vouches.');
 
@@ -201,21 +198,14 @@ export function startBot() {
         if (!interaction.guild) return;
         const member = await interaction.guild.members.fetch(interaction.user.id);
         
-        // Check if role exists before adding
         const role = interaction.guild.roles.cache.get(RECRUIT_ROLE_ID);
-        if (role) {
-          await member.roles.add(role);
-        } else {
-          console.error(`Role ${RECRUIT_ROLE_ID} not found`);
-        }
+        if (role) await member.roles.add(role);
 
-        // Reply to the user
         await interaction.reply({
           content: `<@${interaction.user.id}> has been recruited, ask a staff or middleman to guide you!`,
           ephemeral: true
         });
 
-        // Send welcome message in the welcome channel with a "Welcome" button
         const welcomeChannel = await interaction.guild.channels.fetch(WELCOME_CHANNEL_ID);
         if (welcomeChannel && welcomeChannel.isTextBased()) {
           const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -223,13 +213,12 @@ export function startBot() {
           );
 
           await welcomeChannel.send({
-            content: `<@${interaction.user.id}> has joined us, WELCOME HIM!`,
+            content: `Hello, <@${interaction.user.id}> has choosen to work with us, welcome him please, and guide him if he needs any help!`,
             components: [row]
           });
         }
       } catch (err) {
         console.error(err);
-        // Only reply if we haven't already
         if (!interaction.replied && !interaction.deferred) {
           return interaction.reply({ content: 'Failed to add role or send welcome message.', ephemeral: true });
         }
@@ -250,4 +239,9 @@ export function startBot() {
     if (interaction.customId === 'fee_50') return interaction.reply({ content: `<@${interaction.user.id}> choose to pay 50%` });
     if (interaction.customId === 'fee_100') return interaction.reply({ content: `<@${interaction.user.id}> choose to pay 100%` });
     if (interaction.customId === 'confirm_yes') return interaction.reply({ content: `<@${interaction.user.id}> confirmed the trade` });
-    if (interaction.custom
+    if (interaction.customId === 'confirm_no') return interaction.reply({ content: `<@${interaction.user.id}> rejected the trade` });
+  });
+
+  // ===== LOGIN =====
+  client.login(DISCORD_TOKEN).catch(console.error);
+}
