@@ -14,7 +14,7 @@ import {
 // ===== CONFIG =====
 const MIN_ROLE_ID = '1460301154104901687'; // minimum role or higher for commands
 const RECRUIT_ROLE_ID = '1460301162535321633'; // role given on +trigger Join
-const WELCOME_CHANNEL_ID = '1460301222446764204'; // channel for welcome announcement
+const WELCOME_CHANNEL_ID = '1460301222446764204'; // your new welcome channel
 
 // ===== IN-MEMORY STORAGE =====
 const vouchData = new Map<string, number>();
@@ -43,7 +43,7 @@ export function startBot() {
   // ===== MESSAGE COMMANDS =====
   client.on(Events.MessageCreate, async (message: Message) => {
     if (message.author.bot) return;
-    if (!message.guild) return; // Ignore DMs
+    if (!message.guild) return;
 
     const lower = message.content.toLowerCase();
 
@@ -202,7 +202,7 @@ export function startBot() {
         if (role) await member.roles.add(role);
 
         await interaction.reply({
-          content: `<@${interaction.user.id}> has been recruited, ask a staff or middleman to guide you!`,
+          content: `<@${interaction.user.id}> has been recruited, go to <#${WELCOME_CHANNEL_ID}> to get rich`,
           ephemeral: true
         });
 
