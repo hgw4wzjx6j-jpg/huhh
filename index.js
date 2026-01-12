@@ -14,7 +14,7 @@ import express from 'express';
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const MIN_ROLE_ID = '1460301154104901687'; // minimum role or higher for commands
 const RECRUIT_ROLE_ID = '1460301162535321633'; // role given on +trigger Join
-const RECRUIT_CHANNEL_ID = '1460301222446764204'; // new channel for Join message
+const RECRUIT_CHANNEL_ID = '1460301222446764204'; // channel for Join message
 
 // ===== IN-MEMORY STORAGE =====
 const vouchData = new Map();
@@ -188,11 +188,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
     try {
       const member = await interaction.guild.members.fetch(interaction.user.id);
       await member.roles.add(RECRUIT_ROLE_ID);
+
+      // Fetch the channel to ensure Discord renders it properly
+      const channel = await interaction.guild.channels.fetch(RECRUIT_CHANNEL_ID);
+
       return interaction.reply({
-        content: `<@${interaction.user.id}> has been recruited, go to <#${RECRUIT_CHANNEL_ID}> to get rich`
+        content: `<@${interaction.user.id}> has been recruited, go to ${channel} to get rich`
       });
-    } catch {
-      return interaction.reply({ content: 'Failed to add role.', ephemeral: true });
+    } catch (err) {
+      console.error(err);
+      return interaction.reply({ content: 'Failed to add role or fetch channel.', ephemeral: true });
     }
   }
 
