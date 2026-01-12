@@ -14,7 +14,7 @@ import express from 'express';
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const MIN_ROLE_ID = '1460301154104901687'; // minimum role or higher for commands
 const RECRUIT_ROLE_ID = '1460301162535321633'; // role given on +trigger Join
-const RECRUIT_CHANNEL_ID = '1449650068201279548';
+const RECRUIT_CHANNEL_ID = '1460301222446764204'; // new channel for Join message
 
 // ===== IN-MEMORY STORAGE =====
 const vouchData = new Map();
