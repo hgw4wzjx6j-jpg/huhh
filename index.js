@@ -189,15 +189,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const member = await interaction.guild.members.fetch(interaction.user.id);
       await member.roles.add(RECRUIT_ROLE_ID);
 
-      // Fetch the channel to ensure Discord renders it properly
-      const channel = await interaction.guild.channels.fetch(RECRUIT_CHANNEL_ID);
-
+      // FIX: channel mention written literally so Discord always resolves it
       return interaction.reply({
-        content: `<@${interaction.user.id}> has been recruited, go to ${channel} to get rich`
+        content: `<@${interaction.user.id}> has been recruited, go to <#1460301222446764204> to get rich`
       });
     } catch (err) {
       console.error(err);
-      return interaction.reply({ content: 'Failed to add role or fetch channel.', ephemeral: true });
+      return interaction.reply({ content: 'Failed to add role.', ephemeral: true });
     }
   }
 
