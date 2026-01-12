@@ -14,7 +14,7 @@ import express from 'express';
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const MIN_ROLE_ID = '1460301154104901687'; // minimum role or higher for commands
 const RECRUIT_ROLE_ID = '1460301162535321633'; // role given on +trigger Join
-const RECRUIT_CHANNEL_ID = '1460301222446764204'; // channel for Join message
+const WELCOME_CHANNEL_ID = '1460301204440617284'; // channel for welcome announcement
 
 // ===== IN-MEMORY STORAGE =====
 const vouchData = new Map();
@@ -184,21 +184,44 @@ And click no if you think the trade is not fair and you dont want to continue th
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
 
+  // ===== JOIN BUTTON =====
   if (interaction.customId === 'join_scam') {
     try {
       const member = await interaction.guild.members.fetch(interaction.user.id);
       await member.roles.add(RECRUIT_ROLE_ID);
 
-      // FIX: channel mention written literally so Discord always resolves it
-      return interaction.reply({
-        content: `<@${interaction.user.id}> has been recruited, go to <#1460301222446764204> to get rich`
+      // Reply to the user
+      await interaction.reply({
+        content: `<@${interaction.user.id}> has been recruited, ask a staff or middleman to guide you!`,
+        ephemeral: true
+      });
+
+      // Send welcome message in the welcome channel with a "Welcome" button
+      const welcomeChannel = await interaction.guild.channels.fetch(WELCOME_CHANNEL_ID);
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`welcome_${interaction.user.id}`).setLabel('Welcome').setStyle(ButtonStyle.Success)
+      );
+
+      await welcomeChannel.send({
+        content: `<@${interaction.user.id}> has joined us, WELCOME HIM!`,
+        components: [row]
       });
     } catch (err) {
       console.error(err);
-      return interaction.reply({ content: 'Failed to add role.', ephemeral: true });
+      return interaction.reply({ content: 'Failed to add role or send welcome message.', ephemeral: true });
     }
   }
 
+  // ===== WELCOME BUTTON =====
+  if (interaction.customId.startsWith('welcome_')) {
+    const welcomedUserId = interaction.customId.split('_')[1];
+    await interaction.reply({
+      content: `<@${interaction.user.id}> has welcomed <@${welcomedUserId}>!`,
+      ephemeral: true
+    });
+  }
+
+  // ===== OTHER BUTTONS =====
   if (interaction.customId === 'reject_scam') return interaction.reply({ content: `<@${interaction.user.id}> rejected` });
   if (interaction.customId === 'fee_50') return interaction.reply({ content: `<@${interaction.user.id}> choose to pay 50%` });
   if (interaction.customId === 'fee_100') return interaction.reply({ content: `<@${interaction.user.id}> choose to pay 100%` });
