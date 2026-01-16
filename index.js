@@ -37,7 +37,7 @@ client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
   if (!message.guild) return;
 
-  const lower = message.content.toLowerCase();
+  const content = message.content;
   if (!message.member) return;
 
   const minRole = message.guild.roles.cache.get(MIN_ROLE_ID);
@@ -46,7 +46,7 @@ client.on(Events.MessageCreate, async (message) => {
     (minRole && message.member.roles.cache.some(role => role.position >= minRole.position));
 
   // ===== +cmds =====
-  if (lower === '+cmds') {
+  if (content === '+cmds') {
     const embed = new EmbedBuilder()
       .setTitle('Bot Commands')
       .setDescription('List of all available commands and their functions:')
@@ -59,20 +59,20 @@ client.on(Events.MessageCreate, async (message) => {
         { name: '!ping', value: 'Check if the bot is responsive.' }
       )
       .setColor('#5865F2');
-    return message.reply({ embeds: [embed] });
+    return message.channel.send({ embeds: [embed] });
   }
 
   // ===== !ping =====
-  if (lower === '!ping') return message.reply('Pong!');
+  if (content === '!ping') return message.channel.send('Pong!');
 
-  // Restricted commands permission check
+  // ===== Permission check for restricted commands =====
   const restricted = ['+trigger', '+fee', '+confirm', '+setvouches'];
-  if (restricted.some(cmd => lower.startsWith(cmd)) && !hasPermission) {
-    return message.reply('You do not have permission to use this command.');
+  if (restricted.some(cmd => content.startsWith(cmd)) && !hasPermission) {
+    return message.channel.send('You do not have permission to use this command.');
   }
 
   // ===== +trigger =====
-  if (lower === '+trigger') {
+  if (content === '+trigger') {
     const embed = new EmbedBuilder()
       .setTitle('Scam Notifications')
       .setDescription(
@@ -103,7 +103,7 @@ BUT the only catch is you have to split 50/50 with the MM - or they might give 1
   }
 
   // ===== +fee =====
-  if (lower === '+fee') {
+  if (content === '+fee') {
     const embed = new EmbedBuilder()
       .setTitle('MM FEE')
       .setDescription(
@@ -132,7 +132,7 @@ Users are able to split the fee OR manage to pay the full fee if possible.
   }
 
   // ===== +confirm =====
-  if (lower === '+confirm') {
+  if (content === '+confirm') {
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('confirm_yes').setLabel('Yes').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId('confirm_no').setLabel('No').setStyle(ButtonStyle.Danger)
@@ -148,23 +148,23 @@ And click no if you think the trade is not fair and you dont want to continue th
   }
 
   // ===== +vouches =====
-  if (lower.startsWith('+vouches')) {
-    let targetUser = message.mentions.users.first() || message.author;
+  if (content.startsWith('+vouches')) {
+    const targetUser = message.mentions.users.first() || message.author;
     const amount = vouchData.get(targetUser.id) || 0;
-    return message.reply(`<@${targetUser.id}> currently has **${amount}** vouches!`);
+    return message.channel.send(`<@${targetUser.id}> currently has **${amount}** vouches!`);
   }
 
   // ===== +setvouches =====
-  if (lower.startsWith('+setvouches')) {
+  if (content.startsWith('+setvouches')) {
     const targetUser = message.mentions.users.first();
-    if (!targetUser) return message.reply('Please mention a user.');
+    if (!targetUser) return message.channel.send('Please mention a user.');
 
-    const args = message.content.trim().split(/\s+/);
+    const args = content.trim().split(/\s+/);
     const amount = parseInt(args[args.length - 1]);
-    if (isNaN(amount)) return message.reply('Invalid amount.');
+    if (isNaN(amount)) return message.channel.send('Invalid amount.');
 
     vouchData.set(targetUser.id, amount);
-    return message.reply(`Set <@${targetUser.id}>'s vouches to **${amount}**.`);
+    return message.channel.send(`Set <@${targetUser.id}>'s vouches to **${amount}**.`);
   }
 });
 
@@ -179,12 +179,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const role = interaction.guild.roles.cache.get(RECRUIT_ROLE_ID);
       if (role) await member.roles.add(role);
 
-      // PUBLIC MESSAGE (everyone sees it)
+      // Public message for everyone
       await interaction.channel.send(
         `<@${interaction.user.id}> has been recruited, go to <#1460301222446764204> to learn how to hit, also make sure to read the rules! <#1460301201689284699>`
       );
 
-      await interaction.deferUpdate(); // no ephemeral
+      await interaction.deferUpdate(); // avoid ephemeral
       break;
     }
 
