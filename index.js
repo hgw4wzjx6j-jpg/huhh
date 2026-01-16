@@ -9,12 +9,11 @@ import {
   PermissionsBitField
 } from 'discord.js';
 import express from 'express';
+import { storage } from './server/storage.js';
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const MIN_ROLE_ID = '1460301154104901687';
 const RECRUIT_ROLE_ID = '1460301162535321633';
-
-const vouchData = new Map();
 
 const client = new Client({
   intents: [
@@ -90,48 +89,10 @@ client.on(Events.MessageCreate, async (message) => {
     return message.channel.send({ embeds: [embed], components: [row] });
   }
 
-  if (lower === '+fee') {
-    const embed = new EmbedBuilder()
-      .setTitle('MM FEE')
-      .setDescription(
-'MM FEE\n' +
-'Thank You For Using Our services\n' +
-'Your items are currently being held for the time being.\n\n' +
-'To proceed with the trade, please make the necessary donations that the MM deserves. We appreciate your cooperation.\n\n' +
-'```\n' +
-'Please be patient while a MM will list a price\n' +
-'Discuss with your trader about how you would want to do the Fee.\n\n' +
-'Users are able to split the fee OR manage to pay the full fee if possible.\n' +
-'(Once clicked, you can\'t redo)\n' +
-'```'
-      )
-      .setColor('#2F3136');
-
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('fee_50').setLabel('50% Each').setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('fee_100').setLabel('100%').setStyle(ButtonStyle.Secondary)
-    );
-
-    return message.channel.send({ embeds: [embed], components: [row] });
-  }
-
-  if (lower === '+confirm') {
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('confirm_yes').setLabel('Yes').setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId('confirm_no').setLabel('No').setStyle(ButtonStyle.Danger)
-    );
-
-    return message.channel.send({
-      content:
-'Hello for confirmation please click yes, if you click yes it means you confirm and want to continue trade\n\n' +
-'And click no if you think the trade is not fair and you dont want to continue the trade',
-      components: [row]
-    });
-  }
-
   if (lower.startsWith('+vouches')) {
     const targetUser = message.mentions.users.first() || message.author;
-    const amount = vouchData.get(targetUser.id) || 0;
+    const vouch = await storage.getVouches(targetUser.id);
+    const amount = vouch ? vouch.amount : 0;
     return message.reply('<@' + targetUser.id + '> currently has **' + amount + '** vouches!');
   }
 
@@ -141,7 +102,7 @@ client.on(Events.MessageCreate, async (message) => {
     const args = message.content.trim().split(/\s+/);
     const amount = parseInt(args[args.length - 1]);
     if (isNaN(amount)) return message.reply('Invalid amount.');
-    vouchData.set(targetUser.id, amount);
+    await storage.setVouches({ userId: targetUser.id, amount });
     return message.reply('Set <@' + targetUser.id + '>\'s vouches to **' + amount + '**.');
   }
 });
@@ -158,7 +119,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       await interaction.reply({
         content: '<@' + interaction.user.id + '> has been recruited, go to https://discord.com/channels/1429006027466211408/1460301222446764204 to learn how to hit, also make sure to read the rules! https://discord.com/channels/1429006027466211408/1460301204440617284',
-        ephemeral: true
+        ephemeral: false
       });
     } catch (err) {
       console.error(err);
@@ -166,11 +127,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   }
 
-  if (interaction.customId === 'reject_scam') await interaction.reply({ content: '<@' + interaction.user.id + '> rejected' });
-  if (interaction.customId === 'fee_50') await interaction.reply({ content: '<@' + interaction.user.id + '> choose to pay 50%' });
-  if (interaction.customId === 'fee_100') await interaction.reply({ content: '<@' + interaction.user.id + '> choose to pay 100%' });
-  if (interaction.customId === 'confirm_yes') await interaction.reply({ content: '<@' + interaction.user.id + '> confirmed the trade' });
-  if (interaction.customId === 'confirm_no') await interaction.reply({ content: '<@' + interaction.user.id + '> rejected the trade' });
+  // Other button logic...
 });
 
 client.login(DISCORD_TOKEN).catch(console.error);
