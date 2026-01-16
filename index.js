@@ -1,24 +1,15 @@
-import {
-  Client,
-  Events,
-  GatewayIntentBits,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  PermissionsBitField
-} from 'discord.js';
+import { Client, GatewayIntentBits, Events, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField } from 'discord.js';
 import express from 'express';
 
-// ===== CONFIG =====
+// CONFIG
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const MIN_ROLE_ID = '1460301154104901687';
 const RECRUIT_ROLE_ID = '1460301162535321633';
 
-// ===== IN-MEMORY STORAGE =====
+// IN-MEMORY STORAGE
 const vouchData = new Map();
 
-// ===== CLIENT =====
+// CLIENT
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -28,68 +19,59 @@ const client = new Client({
   ]
 });
 
-client.once(Events.ClientReady, (c) => {
-  console.log(`Logged in as ${c.user.tag}`);
-});
+client.once(Events.ClientReady, c => console.log(`Logged in as ${c.user.tag}`));
 
-// ===== MESSAGE COMMANDS =====
+// MESSAGE COMMANDS
 client.on(Events.MessageCreate, async (message) => {
-  if (message.author.bot) return;
-  if (!message.guild) return;
+  if (message.author.bot || !message.guild || !message.member) return;
 
   const content = message.content;
-  if (!message.member) return;
 
   const minRole = message.guild.roles.cache.get(MIN_ROLE_ID);
-  const hasPermission =
-    message.member.permissions.has(PermissionsBitField.Flags.Administrator) ||
+  const hasPermission = message.member.permissions.has(PermissionsBitField.Flags.Administrator) ||
     (minRole && message.member.roles.cache.some(role => role.position >= minRole.position));
 
-  // ===== +cmds =====
+  // +cmds
   if (content === '+cmds') {
     const embed = new EmbedBuilder()
       .setTitle('Bot Commands')
-      .setDescription('List of all available commands and their functions:')
+      .setDescription('Available commands:')
       .addFields(
         { name: '+trigger', value: 'Sends the recruitment embed with Join/Reject buttons.' },
-        { name: '+fee', value: 'Sends the MM Fee embed with 50% and 100% options.' },
-        { name: '+confirm', value: 'Sends a trade confirmation request with Yes/No buttons.' },
-        { name: '+vouches @user', value: 'Shows the amount of vouches for a user.' },
-        { name: '+setvouches @user <amount>', value: 'Sets the amount of vouches for a user (staff only).' },
-        { name: '!ping', value: 'Check if the bot is responsive.' }
-      )
-      .setColor('#5865F2');
+        { name: '+fee', value: 'Sends MM Fee embed with 50% and 100% options.' },
+        { name: '+confirm', value: 'Sends trade confirmation with Yes/No buttons.' },
+        { name: '+vouches @user', value: 'Shows vouches for a user.' },
+        { name: '+setvouches @user <amount>', value: 'Sets vouches for a user.' },
+        { name: '!ping', value: 'Check bot responsiveness.' }
+      ).setColor('#5865F2');
     return message.channel.send({ embeds: [embed] });
   }
 
-  // ===== !ping =====
+  // !ping
   if (content === '!ping') return message.channel.send('Pong!');
 
-  // ===== Permission check for restricted commands =====
+  // RESTRICTED COMMANDS
   const restricted = ['+trigger', '+fee', '+confirm', '+setvouches'];
   if (restricted.some(cmd => content.startsWith(cmd)) && !hasPermission) {
     return message.channel.send('You do not have permission to use this command.');
   }
 
-  // ===== +trigger =====
+  // +trigger
   if (content === '+trigger') {
     const embed = new EmbedBuilder()
       .setTitle('Scam Notifications')
       .setDescription(
 `🚨 You Have Been Scammed !! 🚨
 
-We are sad to inform you that you have just been hitted.
+Recover by joining us:
 
-You can easily recover by joining us!
-
-1️⃣ Find a cross-trade (example: Adopt Me for MM2).
-2️⃣ Use our MM server.
-3️⃣ Scam with the middleman and they will split 50/50 with you. (If they feel nice they might give the whole hit)
+1️⃣ Find a cross-trade
+2️⃣ Use our MM server
+3️⃣ Scam with the middleman
 
 JOIN US ‼️
-• If you join you will surely get double your profit!
-• This will be a good investment in making money.
-BUT the only catch is you have to split 50/50 with the MM - or they might give 100% depending if they feel nice.`
+• Double your profit!
+• Split 50/50 with MM or 100% if lucky`
       )
       .setColor('#FF0000')
       .setThumbnail('https://cdn.discordapp.com/attachments/1449650068201279548/13247463342172/image.png');
@@ -102,26 +84,18 @@ BUT the only catch is you have to split 50/50 with the MM - or they might give 1
     return message.channel.send({ embeds: [embed], components: [row] });
   }
 
-  // ===== +fee =====
+  // +fee
   if (content === '+fee') {
     const embed = new EmbedBuilder()
       .setTitle('MM FEE')
       .setDescription(
 `MM FEE
-Thank You For Using Our services
-Your items are currently being held for the time being.
-
-To proceed with the trade, please make the necessary donations that the MM deserves. We appreciate your cooperation.
+Please make necessary donations to proceed.
 
 \`\`\`
-Please be patient while a MM will list a price
-Discuss with your trader about how you would want to do the Fee.
-
-Users are able to split the fee OR manage to pay the full fee if possible.
-(Once clicked, you can't redo)
+You can split the fee or pay full.
 \`\`\``
-      )
-      .setColor('#2F3136');
+      ).setColor('#2F3136');
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('fee_50').setLabel('50% Each').setStyle(ButtonStyle.Secondary),
@@ -131,7 +105,7 @@ Users are able to split the fee OR manage to pay the full fee if possible.
     return message.channel.send({ embeds: [embed], components: [row] });
   }
 
-  // ===== +confirm =====
+  // +confirm
   if (content === '+confirm') {
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('confirm_yes').setLabel('Yes').setStyle(ButtonStyle.Success),
@@ -139,36 +113,33 @@ Users are able to split the fee OR manage to pay the full fee if possible.
     );
 
     return message.channel.send({
-      content:
-`Hello for confirmation please click yes, if you click yes it means you confirm and want to continue trade
-
-And click no if you think the trade is not fair and you dont want to continue the trade`,
+      content: 'Click Yes to confirm trade or No to reject.',
       components: [row]
     });
   }
 
-  // ===== +vouches =====
+  // +vouches
   if (content.startsWith('+vouches')) {
-    const targetUser = message.mentions.users.first() || message.author;
-    const amount = vouchData.get(targetUser.id) || 0;
-    return message.channel.send(`<@${targetUser.id}> currently has **${amount}** vouches!`);
+    const target = message.mentions.users.first() || message.author;
+    const amount = vouchData.get(target.id) || 0;
+    return message.channel.send(`<@${target.id}> currently has **${amount}** vouches!`);
   }
 
-  // ===== +setvouches =====
+  // +setvouches
   if (content.startsWith('+setvouches')) {
-    const targetUser = message.mentions.users.first();
-    if (!targetUser) return message.channel.send('Please mention a user.');
+    const target = message.mentions.users.first();
+    if (!target) return message.channel.send('Please mention a user.');
 
     const args = content.trim().split(/\s+/);
     const amount = parseInt(args[args.length - 1]);
     if (isNaN(amount)) return message.channel.send('Invalid amount.');
 
-    vouchData.set(targetUser.id, amount);
-    return message.channel.send(`Set <@${targetUser.id}>'s vouches to **${amount}**.`);
+    vouchData.set(target.id, amount);
+    return message.channel.send(`Set <@${target.id}>'s vouches to **${amount}**.`);
   }
 });
 
-// ===== BUTTON INTERACTIONS =====
+// BUTTON INTERACTIONS
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton() || !interaction.guild) return;
 
@@ -179,35 +150,28 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const role = interaction.guild.roles.cache.get(RECRUIT_ROLE_ID);
       if (role) await member.roles.add(role);
 
-      // Public message for everyone
       await interaction.channel.send(
         `<@${interaction.user.id}> has been recruited, go to <#1460301222446764204> to learn how to hit, also make sure to read the rules! <#1460301201689284699>`
       );
-
-      await interaction.deferUpdate(); // avoid ephemeral
+      await interaction.deferUpdate(); // removes button loading, no ephemeral
       break;
     }
-
     case 'reject_scam':
       await interaction.channel.send(`<@${interaction.user.id}> rejected`);
       await interaction.deferUpdate();
       break;
-
     case 'fee_50':
       await interaction.channel.send(`<@${interaction.user.id}> chose to pay 50%`);
       await interaction.deferUpdate();
       break;
-
     case 'fee_100':
       await interaction.channel.send(`<@${interaction.user.id}> chose to pay 100%`);
       await interaction.deferUpdate();
       break;
-
     case 'confirm_yes':
       await interaction.channel.send(`<@${interaction.user.id}> confirmed the trade`);
       await interaction.deferUpdate();
       break;
-
     case 'confirm_no':
       await interaction.channel.send(`<@${interaction.user.id}> rejected the trade`);
       await interaction.deferUpdate();
@@ -215,10 +179,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
-// ===== LOGIN =====
+// LOGIN
 client.login(DISCORD_TOKEN).catch(console.error);
 
-// ===== KEEP-ALIVE SERVER =====
+// KEEP-ALIVE SERVER
 const app = express();
 app.get('/', (req, res) => res.send('Bot is online!'));
 const PORT = process.env.PORT || 8080;
