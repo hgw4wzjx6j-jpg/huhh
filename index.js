@@ -9,11 +9,13 @@ import {
   PermissionsBitField
 } from 'discord.js';
 import express from 'express';
-import { storage } from './server/storage.js';
+import { DatabaseStorage } from './server/storage.js';
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const MIN_ROLE_ID = '1460301154104901687';
 const RECRUIT_ROLE_ID = '1460301162535321633';
+
+const storage = new DatabaseStorage();
 
 const client = new Client({
   intents: [
@@ -126,11 +128,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (!interaction.replied) await interaction.reply({ content: 'Error joining.', ephemeral: true });
     }
   }
-
-  // Other button logic...
 });
 
-client.login(DISCORD_TOKEN).catch(console.error);
+if (DISCORD_TOKEN) {
+  client.login(DISCORD_TOKEN).catch(console.error);
+}
 
 const app = express();
 app.get('/', (req, res) => res.send('Bot is online!'));
