@@ -15,7 +15,7 @@ const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const MIN_ROLE_ID = '1460301154104901687';
 const RECRUIT_ROLE_ID = '1460301162535321633';
 
-// ===== IN-MEMORY STORAGE =====
+// ===== IN-MEMORY VOUCH STORAGE =====
 const vouchData = new Map();
 
 // ===== CLIENT =====
@@ -42,6 +42,7 @@ client.on(Events.MessageCreate, async (message) => {
     message.member.permissions.has(PermissionsBitField.Flags.Administrator) ||
     (minRole && message.member.roles.cache.some(role => role.position >= minRole.position));
 
+  // +cmds
   if (lower === '+cmds') {
     const embed = new EmbedBuilder()
       .setTitle('Bot Commands')
@@ -58,12 +59,15 @@ client.on(Events.MessageCreate, async (message) => {
     return message.reply({ embeds: [embed] });
   }
 
+  // !ping
   if (lower === '!ping') return message.reply('Pong!');
 
+  // Restricted commands check
   const restricted = ['+trigger', '+fee', '+confirm', '+setvouches'];
   if (restricted.some(cmd => lower.startsWith(cmd)) && !hasPermission)
     return message.reply('You do not have permission to use this command.');
 
+  // +trigger
   if (lower === '+trigger') {
     const embed = new EmbedBuilder()
       .setTitle('Scam Notifications')
@@ -94,6 +98,7 @@ BUT the only catch is you have to split 50/50 with the MM - or they might give 1
     return message.channel.send({ embeds: [embed], components: [row] });
   }
 
+  // +fee
   if (lower === '+fee') {
     const embed = new EmbedBuilder()
       .setTitle('MM FEE')
@@ -122,6 +127,7 @@ Users are able to split the fee OR manage to pay the full fee if possible.
     return message.channel.send({ embeds: [embed], components: [row] });
   }
 
+  // +confirm
   if (lower === '+confirm') {
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('confirm_yes').setLabel('Yes').setStyle(ButtonStyle.Success),
@@ -136,6 +142,28 @@ And click no if you think the trade is not fair and you dont want to continue th
       components: [row]
     });
   }
+
+  // +vouches
+  if (lower.startsWith('+vouches')) {
+    const targetUser = message.mentions.users.first() || message.author;
+    const amount = vouchData.get(targetUser.id) || 0;
+    return message.channel.send(`<@${targetUser.id}> currently has **${amount}** vouches!`);
+  }
+
+  // +setvouches
+  if (lower.startsWith('+setvouches')) {
+    const targetUser = message.mentions.users.first();
+    if (!targetUser) return message.reply('Please mention a user.');
+
+    if (!hasPermission) return message.reply('You do not have permission to set vouches.');
+
+    const args = message.content.trim().split(/\s+/);
+    const amount = parseInt(args[args.length - 1]);
+    if (isNaN(amount)) return message.reply('Invalid amount.');
+
+    vouchData.set(targetUser.id, amount);
+    return message.channel.send(`Set <@${targetUser.id}>'s vouches to **${amount}**.`);
+  }
 });
 
 // ===== BUTTON INTERACTIONS =====
@@ -149,12 +177,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const role = interaction.guild.roles.cache.get(RECRUIT_ROLE_ID);
       if (role) await member.roles.add(role);
 
-      // Send public message
+      // PUBLIC MESSAGE
       await interaction.channel.send(
         `<@${interaction.user.id}> has been recruited, go to <#1460301222446764204> to learn how to hit, also make sure to read the rules! <#1460301201689284699>`
       );
 
-      // Acknowledge button without ephemeral message
+      // ACKNOWLEDGE BUTTON WITHOUT EPHEMERAL
       await interaction.deferUpdate();
       break;
     }
