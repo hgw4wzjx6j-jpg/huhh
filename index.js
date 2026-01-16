@@ -12,11 +12,8 @@ import express from 'express';
 
 // ===== CONFIG =====
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
-const MIN_ROLE_ID = '1460301154104901687'; 
-const RECRUIT_ROLE_ID = '1460301162535321633'; 
-
-// ===== IN-MEMORY STORAGE =====
-import { vouchData } from './storage.js';
+const MIN_ROLE_ID = '1460301154104901687';
+const RECRUIT_ROLE_ID = '1460301162535321633';
 
 // ===== CLIENT =====
 const client = new Client({
@@ -50,8 +47,6 @@ client.on(Events.MessageCreate, async (message) => {
         { name: '+trigger', value: 'Sends the recruitment embed with Join/Reject buttons.' },
         { name: '+fee', value: 'Sends the MM Fee embed with 50% and 100% options.' },
         { name: '+confirm', value: 'Sends a trade confirmation request with Yes/No buttons.' },
-        { name: '+vouches @user', value: 'Shows the amount of vouches for a user.' },
-        { name: '+setvouches @user <amount>', value: 'Sets the amount of vouches for a user (staff only).' },
         { name: '!ping', value: 'Check if the bot is responsive.' }
       )
       .setColor('#5865F2');
@@ -60,7 +55,7 @@ client.on(Events.MessageCreate, async (message) => {
 
   if (lower === '!ping') return message.reply('Pong!');
 
-  const restricted = ['+trigger', '+fee', '+confirm', '+setvouches'];
+  const restricted = ['+trigger', '+fee', '+confirm'];
   if (restricted.some(cmd => lower.startsWith(cmd)) && !hasPermission)
     return message.reply('You do not have permission to use this command.');
 
@@ -136,50 +131,52 @@ And click no if you think the trade is not fair and you dont want to continue th
       components: [row]
     });
   }
-
-  if (lower.startsWith('+vouches')) {
-    const targetUser = message.mentions.users.first() || message.author;
-    const amount = vouchData.get(targetUser.id) || 0;
-    return message.reply(`<@${targetUser.id}> currently has **${amount}** vouches!`);
-  }
-
-  if (lower.startsWith('+setvouches')) {
-    const targetUser = message.mentions.users.first();
-    if (!targetUser) return message.reply('Please mention a user.');
-    const args = message.content.trim().split(/\s+/);
-    const amount = parseInt(args[args.length - 1]);
-    if (isNaN(amount)) return message.reply('Invalid amount.');
-    vouchData.set(targetUser.id, amount);
-    return message.reply(`Set <@${targetUser.id}>'s vouches to **${amount}**.`);
-  }
 });
 
 // ===== BUTTON INTERACTIONS =====
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
 
-  try {
-    if (!interaction.guild) return;
-    const member = await interaction.guild.members.fetch(interaction.user.id);
+  const member = await interaction.guild.members.fetch(interaction.user.id);
 
-    if (interaction.customId === 'join_scam') {
+  switch (interaction.customId) {
+    case 'join_scam': {
       const role = interaction.guild.roles.cache.get(RECRUIT_ROLE_ID);
       if (role) await member.roles.add(role);
 
-      // PUBLIC MESSAGE
-      await interaction.channel.send(`<@${interaction.user.id}> has been recruited, go to https://discord.com/channels/1429006027466211408/1460301222446764204 to learn how to hit, also make sure to read the rules! https://discord.com/channels/1429006027466211408/1460301204440617284`);
+      await interaction.channel.send(
+        `<@${interaction.user.id}> has been recruited, go to https://discord.com/channels/1429006027466211408/1460301222446764204 to learn how to hit, also make sure to read the rules! https://discord.com/channels/1429006027466211408/1460301201689284699`
+      );
 
-      await interaction.deferUpdate(); // silently acknowledge the button
+      // Remove buttons so they don’t appear pending anymore
+      await interaction.update({ components: interaction.message.components });
+      break;
     }
 
-    if (interaction.customId === 'reject_scam') await interaction.channel.send(`<@${interaction.user.id}> rejected`);
-    if (interaction.customId === 'fee_50') await interaction.channel.send(`<@${interaction.user.id}> choose to pay 50%`);
-    if (interaction.customId === 'fee_100') await interaction.channel.send(`<@${interaction.user.id}> choose to pay 100%`);
-    if (interaction.customId === 'confirm_yes') await interaction.channel.send(`<@${interaction.user.id}> confirmed the trade`);
-    if (interaction.customId === 'confirm_no') await interaction.channel.send(`<@${interaction.user.id}> rejected the trade`);
+    case 'reject_scam':
+      await interaction.channel.send(`<@${interaction.user.id}> rejected`);
+      await interaction.update({ components: interaction.message.components });
+      break;
 
-  } catch (err) {
-    console.error(err);
+    case 'fee_50':
+      await interaction.channel.send(`<@${interaction.user.id}> chose to pay 50%`);
+      await interaction.update({ components: interaction.message.components });
+      break;
+
+    case 'fee_100':
+      await interaction.channel.send(`<@${interaction.user.id}> chose to pay 100%`);
+      await interaction.update({ components: interaction.message.components });
+      break;
+
+    case 'confirm_yes':
+      await interaction.channel.send(`<@${interaction.user.id}> confirmed the trade`);
+      await interaction.update({ components: interaction.message.components });
+      break;
+
+    case 'confirm_no':
+      await interaction.channel.send(`<@${interaction.user.id}> rejected the trade`);
+      await interaction.update({ components: interaction.message.components });
+      break;
   }
 });
 
