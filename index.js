@@ -149,39 +149,39 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const role = interaction.guild.roles.cache.get(RECRUIT_ROLE_ID);
       if (role) await member.roles.add(role);
 
-      // PUBLIC MESSAGE with correct channels
+      // Send public message
       await interaction.channel.send(
         `<@${interaction.user.id}> has been recruited, go to <#1460301222446764204> to learn how to hit, also make sure to read the rules! <#1460301201689284699>`
       );
 
-      // Remove button pending state
-      await interaction.update({ components: interaction.message.components });
+      // Acknowledge button without ephemeral message
+      await interaction.deferUpdate();
       break;
     }
 
     case 'reject_scam':
       await interaction.channel.send(`<@${interaction.user.id}> rejected`);
-      await interaction.update({ components: interaction.message.components });
+      await interaction.deferUpdate();
       break;
 
     case 'fee_50':
       await interaction.channel.send(`<@${interaction.user.id}> chose to pay 50%`);
-      await interaction.update({ components: interaction.message.components });
+      await interaction.deferUpdate();
       break;
 
     case 'fee_100':
       await interaction.channel.send(`<@${interaction.user.id}> chose to pay 100%`);
-      await interaction.update({ components: interaction.message.components });
+      await interaction.deferUpdate();
       break;
 
     case 'confirm_yes':
       await interaction.channel.send(`<@${interaction.user.id}> confirmed the trade`);
-      await interaction.update({ components: interaction.message.components });
+      await interaction.deferUpdate();
       break;
 
     case 'confirm_no':
       await interaction.channel.send(`<@${interaction.user.id}> rejected the trade`);
-      await interaction.update({ components: interaction.message.components });
+      await interaction.deferUpdate();
       break;
   }
 });
