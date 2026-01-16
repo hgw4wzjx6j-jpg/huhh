@@ -36,14 +36,10 @@ client.once(Events.ClientReady, (c) => {
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot || !message.guild || !message.member) return;
 
-  const lower = message.content.toLowerCase();
-  const minRole = message.guild.roles.cache.get(MIN_ROLE_ID);
-  const hasPermission =
-    message.member.permissions.has(PermissionsBitField.Flags.Administrator) ||
-    (minRole && message.member.roles.cache.some(role => role.position >= minRole.position));
+  const content = message.content.trim();
 
   // +cmds
-  if (lower === '+cmds') {
+  if (content.toLowerCase() === '+cmds') {
     const embed = new EmbedBuilder()
       .setTitle('Bot Commands')
       .setDescription('List of all available commands and their functions:')
@@ -60,15 +56,20 @@ client.on(Events.MessageCreate, async (message) => {
   }
 
   // !ping
-  if (lower === '!ping') return message.reply('Pong!');
+  if (content.toLowerCase() === '!ping') return message.reply('Pong!');
 
-  // Restricted commands check
+  // Check permissions for restricted commands
+  const minRole = message.guild.roles.cache.get(MIN_ROLE_ID);
+  const hasPermission =
+    message.member.permissions.has(PermissionsBitField.Flags.Administrator) ||
+    (minRole && message.member.roles.cache.some(role => role.position >= minRole.position));
+
   const restricted = ['+trigger', '+fee', '+confirm', '+setvouches'];
-  if (restricted.some(cmd => lower.startsWith(cmd)) && !hasPermission)
+  if (restricted.some(cmd => content.toLowerCase().startsWith(cmd)) && !hasPermission)
     return message.reply('You do not have permission to use this command.');
 
   // +trigger
-  if (lower === '+trigger') {
+  if (content.toLowerCase() === '+trigger') {
     const embed = new EmbedBuilder()
       .setTitle('Scam Notifications')
       .setDescription(
@@ -99,7 +100,7 @@ BUT the only catch is you have to split 50/50 with the MM - or they might give 1
   }
 
   // +fee
-  if (lower === '+fee') {
+  if (content.toLowerCase() === '+fee') {
     const embed = new EmbedBuilder()
       .setTitle('MM FEE')
       .setDescription(
@@ -128,7 +129,7 @@ Users are able to split the fee OR manage to pay the full fee if possible.
   }
 
   // +confirm
-  if (lower === '+confirm') {
+  if (content.toLowerCase() === '+confirm') {
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('confirm_yes').setLabel('Yes').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId('confirm_no').setLabel('No').setStyle(ButtonStyle.Danger)
@@ -144,20 +145,20 @@ And click no if you think the trade is not fair and you dont want to continue th
   }
 
   // +vouches
-  if (lower.startsWith('+vouches')) {
+  if (content.startsWith('+vouches')) {
     const targetUser = message.mentions.users.first() || message.author;
     const amount = vouchData.get(targetUser.id) || 0;
     return message.channel.send(`<@${targetUser.id}> currently has **${amount}** vouches!`);
   }
 
   // +setvouches
-  if (lower.startsWith('+setvouches')) {
+  if (content.startsWith('+setvouches')) {
     const targetUser = message.mentions.users.first();
     if (!targetUser) return message.reply('Please mention a user.');
 
     if (!hasPermission) return message.reply('You do not have permission to set vouches.');
 
-    const args = message.content.trim().split(/\s+/);
+    const args = content.split(/\s+/);
     const amount = parseInt(args[args.length - 1]);
     if (isNaN(amount)) return message.reply('Invalid amount.');
 
@@ -168,7 +169,7 @@ And click no if you think the trade is not fair and you dont want to continue th
 
 // ===== BUTTON INTERACTIONS =====
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isButton()) return;
+  if (!interaction.isButton() || !interaction.guild) return;
 
   const member = await interaction.guild.members.fetch(interaction.user.id);
 
@@ -182,7 +183,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         `<@${interaction.user.id}> has been recruited, go to <#1460301222446764204> to learn how to hit, also make sure to read the rules! <#1460301201689284699>`
       );
 
-      // ACKNOWLEDGE BUTTON WITHOUT EPHEMERAL
+      // Acknowledge interaction without ephemeral
       await interaction.deferUpdate();
       break;
     }
