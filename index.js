@@ -12,8 +12,8 @@ import express from 'express';
 
 // ===== CONFIG =====
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
-const ROLE_ID = '1429856676759994438'; // staff/admin role
-const RECRUIT_ROLE_ID = '1447166911174676593'; // role given on +trigger Join
+const ROLE_ID = '1460301154104901687'; // staff/admin role
+const RECRUIT_ROLE_ID = '1460301162535321633'; // role given on +trigger Join
 const RECRUIT_CHANNEL_ID = '1460301222446764204';
 
 // ===== IN-MEMORY STORAGE =====
