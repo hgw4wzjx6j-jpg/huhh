@@ -9,7 +9,7 @@ import {
   PermissionsBitField
 } from 'discord.js';
 import express from 'express';
-import { vouchData, saveVouches } from './storage.js'; // <-- changed to root
+import { vouchData, saveVouches } from './storage.js'; // <-- root import
 
 // ===== CONFIG =====
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
@@ -32,17 +32,16 @@ client.once(Events.ClientReady, (c) => {
 
 // ===== MESSAGE COMMANDS =====
 client.on(Events.MessageCreate, async (message) => {
-  if (message.author.bot) return;
-  if (!message.guild) return;
+  if (message.author.bot || !message.guild || !message.member) return;
 
   const lower = message.content.toLowerCase();
-  if (!message.member) return;
 
   const minRole = message.guild.roles.cache.get(MIN_ROLE_ID);
   const hasPermission =
     message.member.permissions.has(PermissionsBitField.Flags.Administrator) ||
     (minRole && message.member.roles.cache.some(role => role.position >= minRole.position));
 
+  // COMMANDS
   if (lower === '+cmds') {
     const embed = new EmbedBuilder()
       .setTitle('Bot Commands')
@@ -62,10 +61,10 @@ client.on(Events.MessageCreate, async (message) => {
   if (lower === '!ping') return message.reply('Pong!');
 
   const restricted = ['+trigger', '+fee', '+confirm', '+setvouches'];
-  if (restricted.some(cmd => lower.startsWith(cmd)) && !hasPermission) {
+  if (restricted.some(cmd => lower.startsWith(cmd)) && !hasPermission)
     return message.reply('You do not have permission to use this command.');
-  }
 
+  // +trigger
   if (lower === '+trigger') {
     const embed = new EmbedBuilder()
       .setTitle('Scam Notifications')
@@ -96,6 +95,7 @@ BUT the only catch is you have to split 50/50 with the MM - or they might give 1
     return message.channel.send({ embeds: [embed], components: [row] });
   }
 
+  // +fee
   if (lower === '+fee') {
     const embed = new EmbedBuilder()
       .setTitle('MM FEE')
@@ -124,6 +124,7 @@ Users are able to split the fee OR manage to pay the full fee if possible.
     return message.channel.send({ embeds: [embed], components: [row] });
   }
 
+  // +confirm
   if (lower === '+confirm') {
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('confirm_yes').setLabel('Yes').setStyle(ButtonStyle.Success),
@@ -139,12 +140,14 @@ And click no if you think the trade is not fair and you dont want to continue th
     });
   }
 
+  // +vouches
   if (lower.startsWith('+vouches')) {
     let targetUser = message.mentions.users.first() || message.author;
     const amount = vouchData.get(targetUser.id) || 0;
     return message.reply(`<@${targetUser.id}> currently has **${amount}** vouches!`);
   }
 
+  // +setvouches
   if (lower.startsWith('+setvouches')) {
     const targetUser = message.mentions.users.first();
     if (!targetUser) return message.reply('Please mention a user.');
@@ -152,7 +155,7 @@ And click no if you think the trade is not fair and you dont want to continue th
     const amount = parseInt(args[args.length - 1]);
     if (isNaN(amount)) return message.reply('Invalid amount.');
     vouchData.set(targetUser.id, amount);
-    saveVouches(); // <-- save changes
+    saveVouches(); // <-- persist changes
     return message.reply(`Set <@${targetUser.id}>'s vouches to **${amount}**.`);
   }
 });
