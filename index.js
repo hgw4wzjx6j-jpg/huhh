@@ -9,7 +9,7 @@ import {
   PermissionsBitField
 } from 'discord.js';
 import express from 'express';
-import { vouchData, saveVouches } from './storage.js'; // <-- fixed import
+import { vouchData, saveVouches } from './storage.js'; // <-- changed to root
 
 // ===== CONFIG =====
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
@@ -152,7 +152,7 @@ And click no if you think the trade is not fair and you dont want to continue th
     const amount = parseInt(args[args.length - 1]);
     if (isNaN(amount)) return message.reply('Invalid amount.');
     vouchData.set(targetUser.id, amount);
-    saveVouches(); // <-- save immediately
+    saveVouches(); // <-- save changes
     return message.reply(`Set <@${targetUser.id}>'s vouches to **${amount}**.`);
   }
 });
