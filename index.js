@@ -15,6 +15,9 @@ const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const MIN_ROLE_ID = '1460301154104901687';
 const RECRUIT_ROLE_ID = '1460301162535321633';
 
+// ===== IN-MEMORY STORAGE =====
+const vouchData = new Map();
+
 // ===== CLIENT =====
 const client = new Client({
   intents: [
@@ -135,56 +138,4 @@ And click no if you think the trade is not fair and you dont want to continue th
 
 // ===== BUTTON INTERACTIONS =====
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isButton()) return;
-
-  const member = await interaction.guild.members.fetch(interaction.user.id);
-
-  switch (interaction.customId) {
-    case 'join_scam': {
-      const role = interaction.guild.roles.cache.get(RECRUIT_ROLE_ID);
-      if (role) await member.roles.add(role);
-
-      await interaction.channel.send(
-        `<@${interaction.user.id}> has been recruited, go to https://discord.com/channels/1429006027466211408/1460301222446764204 to learn how to hit, also make sure to read the rules! https://discord.com/channels/1429006027466211408/1460301201689284699`
-      );
-
-      // Remove buttons so they don’t appear pending anymore
-      await interaction.update({ components: interaction.message.components });
-      break;
-    }
-
-    case 'reject_scam':
-      await interaction.channel.send(`<@${interaction.user.id}> rejected`);
-      await interaction.update({ components: interaction.message.components });
-      break;
-
-    case 'fee_50':
-      await interaction.channel.send(`<@${interaction.user.id}> chose to pay 50%`);
-      await interaction.update({ components: interaction.message.components });
-      break;
-
-    case 'fee_100':
-      await interaction.channel.send(`<@${interaction.user.id}> chose to pay 100%`);
-      await interaction.update({ components: interaction.message.components });
-      break;
-
-    case 'confirm_yes':
-      await interaction.channel.send(`<@${interaction.user.id}> confirmed the trade`);
-      await interaction.update({ components: interaction.message.components });
-      break;
-
-    case 'confirm_no':
-      await interaction.channel.send(`<@${interaction.user.id}> rejected the trade`);
-      await interaction.update({ components: interaction.message.components });
-      break;
-  }
-});
-
-// ===== LOGIN =====
-client.login(DISCORD_TOKEN).catch(console.error);
-
-// ===== KEEP-ALIVE SERVER =====
-const app = express();
-app.get('/', (req, res) => res.send('Bot is online!'));
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  if (!interaction.isButton
