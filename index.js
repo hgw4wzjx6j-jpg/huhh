@@ -9,14 +9,13 @@ import {
   PermissionsBitField
 } from 'discord.js';
 import express from 'express';
-import { DatabaseStorage } from './server/storage.js';
 
+// ===== CONFIG =====
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const MIN_ROLE_ID = '1460301154104901687';
 const RECRUIT_ROLE_ID = '1460301162535321633';
 
-const storage = new DatabaseStorage();
-
+// ===== CLIENT =====
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -89,23 +88,6 @@ client.on(Events.MessageCreate, async (message) => {
     );
 
     return message.channel.send({ embeds: [embed], components: [row] });
-  }
-
-  if (lower.startsWith('+vouches')) {
-    const targetUser = message.mentions.users.first() || message.author;
-    const vouch = await storage.getVouches(targetUser.id);
-    const amount = vouch ? vouch.amount : 0;
-    return message.reply('<@' + targetUser.id + '> currently has **' + amount + '** vouches!');
-  }
-
-  if (lower.startsWith('+setvouches')) {
-    const targetUser = message.mentions.users.first();
-    if (!targetUser) return message.reply('Please mention a user.');
-    const args = message.content.trim().split(/\s+/);
-    const amount = parseInt(args[args.length - 1]);
-    if (isNaN(amount)) return message.reply('Invalid amount.');
-    await storage.setVouches({ userId: targetUser.id, amount });
-    return message.reply('Set <@' + targetUser.id + '>\'s vouches to **' + amount + '**.');
   }
 });
 
