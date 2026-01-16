@@ -50,6 +50,8 @@ client.on(Events.MessageCreate, async (message) => {
         { name: '+trigger', value: 'Sends the recruitment embed with Join/Reject buttons.' },
         { name: '+fee', value: 'Sends the MM Fee embed with 50% and 100% options.' },
         { name: '+confirm', value: 'Sends a trade confirmation request with Yes/No buttons.' },
+        { name: '+vouches @user', value: 'Shows the amount of vouches for a user.' },
+        { name: '+setvouches @user <amount>', value: 'Sets the amount of vouches for a user (staff only).' },
         { name: '!ping', value: 'Check if the bot is responsive.' }
       )
       .setColor('#5865F2');
@@ -58,7 +60,7 @@ client.on(Events.MessageCreate, async (message) => {
 
   if (lower === '!ping') return message.reply('Pong!');
 
-  const restricted = ['+trigger', '+fee', '+confirm'];
+  const restricted = ['+trigger', '+fee', '+confirm', '+setvouches'];
   if (restricted.some(cmd => lower.startsWith(cmd)) && !hasPermission)
     return message.reply('You do not have permission to use this command.');
 
@@ -138,4 +140,57 @@ And click no if you think the trade is not fair and you dont want to continue th
 
 // ===== BUTTON INTERACTIONS =====
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isButton
+  if (!interaction.isButton()) return;
+
+  const member = await interaction.guild.members.fetch(interaction.user.id);
+
+  switch (interaction.customId) {
+    case 'join_scam': {
+      const role = interaction.guild.roles.cache.get(RECRUIT_ROLE_ID);
+      if (role) await member.roles.add(role);
+
+      // PUBLIC MESSAGE with correct channels
+      await interaction.channel.send(
+        `<@${interaction.user.id}> has been recruited, go to <#1460301222446764204> to learn how to hit, also make sure to read the rules! <#1460301201689284699>`
+      );
+
+      // Remove button pending state
+      await interaction.update({ components: interaction.message.components });
+      break;
+    }
+
+    case 'reject_scam':
+      await interaction.channel.send(`<@${interaction.user.id}> rejected`);
+      await interaction.update({ components: interaction.message.components });
+      break;
+
+    case 'fee_50':
+      await interaction.channel.send(`<@${interaction.user.id}> chose to pay 50%`);
+      await interaction.update({ components: interaction.message.components });
+      break;
+
+    case 'fee_100':
+      await interaction.channel.send(`<@${interaction.user.id}> chose to pay 100%`);
+      await interaction.update({ components: interaction.message.components });
+      break;
+
+    case 'confirm_yes':
+      await interaction.channel.send(`<@${interaction.user.id}> confirmed the trade`);
+      await interaction.update({ components: interaction.message.components });
+      break;
+
+    case 'confirm_no':
+      await interaction.channel.send(`<@${interaction.user.id}> rejected the trade`);
+      await interaction.update({ components: interaction.message.components });
+      break;
+  }
+});
+
+// ===== LOGIN =====
+client.login(DISCORD_TOKEN).catch(console.error);
+
+// ===== KEEP-ALIVE SERVER =====
+const app = express();
+app.get('/', (req, res) => res.send('Bot is online!'));
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
