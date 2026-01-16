@@ -43,7 +43,6 @@ client.on(Events.MessageCreate, async (message) => {
     message.member.permissions.has(PermissionsBitField.Flags.Administrator) ||
     (minRole && message.member.roles.cache.some(role => role.position >= minRole.position));
 
-  // COMMANDS
   if (lower === '+cmds') {
     const embed = new EmbedBuilder()
       .setTitle('Bot Commands')
@@ -172,10 +171,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const role = interaction.guild.roles.cache.get(RECRUIT_ROLE_ID);
       if (role) await member.roles.add(role);
 
-      await interaction.reply({
-        content: `<@${interaction.user.id}> has been recruited, go to https://discord.com/channels/1429006027466211408/1460301222446764204 to learn how to hit, also make sure to read the rules! https://discord.com/channels/1429006027466211408/1460301204440617284`,
-        ephemeral: true
-      });
+      // PUBLIC message instead of ephemeral
+      await interaction.channel.send(`<@${interaction.user.id}> has been recruited, go to https://discord.com/channels/1429006027466211408/1460301222446764204 to learn how to hit, also make sure to read the rules! https://discord.com/channels/1429006027466211408/1460301204440617284`);
     } catch (err) {
       console.error(err);
       if (!interaction.replied) await interaction.reply({ content: 'Error joining.', ephemeral: true });
