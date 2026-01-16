@@ -12,9 +12,10 @@ import {
 } from 'discord.js';
 
 // ===== CONFIG =====
-const MIN_ROLE_ID = '1460301154104901687';
-const RECRUIT_ROLE_ID = '1460301162535321633';
-const WELCOME_CHANNEL_ID = '1460301222446764204';
+const MIN_ROLE_ID = '1460301154104901687'; // minimum role to use commands
+const RECRUIT_ROLE_ID = '1460301162535321633'; // role given on Join
+const WELCOME_CHANNEL_ID = '1460301222446764204'; // channel where welcome messages go
+const WELCOME_LINK = 'https://discord.com/channels/@me/1460301222446764204'; // link you provided
 
 // ===== IN-MEMORY STORAGE =====
 const vouchData = new Map<string, number>();
@@ -195,19 +196,21 @@ And click no if you think the trade is not fair and you dont want to continue th
       const role = interaction.guild.roles.cache.get(RECRUIT_ROLE_ID);
       if (role) await member.roles.add(role);
 
+      // Ephemeral message to the user
       await interaction.reply({
         content: `<@${interaction.user.id}> has been recruited, ask a staff or middleman to guide you!`,
         ephemeral: true
       });
 
+      // Send welcome message in channel with your link
       const welcomeChannel = await interaction.guild.channels.fetch(WELCOME_CHANNEL_ID);
-      if (welcomeChannel && welcomeChannel.isTextBased()) {
+      if (welcomeChannel?.isTextBased()) {
         const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder().setCustomId('welcome_button').setLabel('Welcome').setStyle(ButtonStyle.Success)
         );
 
         await welcomeChannel.send({
-          content: `<@${interaction.user.id}> has joined us, WELCOME HIM! Check <#${WELCOME_CHANNEL_ID}>`,
+          content: `<@${interaction.user.id}> has joined us, WELCOME HIM! Check the link here: ${WELCOME_LINK}`,
           components: [row]
         });
       }
