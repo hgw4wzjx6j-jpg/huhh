@@ -9,12 +9,14 @@ import {
   PermissionsBitField
 } from 'discord.js';
 import express from 'express';
-import { vouchData, saveVouches } from './storage.js'; // <-- root import
 
 // ===== CONFIG =====
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const MIN_ROLE_ID = '1460301154104901687'; 
 const RECRUIT_ROLE_ID = '1460301162535321633'; 
+
+// ===== IN-MEMORY STORAGE =====
+const vouchData = new Map();
 
 // ===== CLIENT =====
 const client = new Client({
@@ -154,8 +156,7 @@ And click no if you think the trade is not fair and you dont want to continue th
     const args = message.content.trim().split(/\s+/);
     const amount = parseInt(args[args.length - 1]);
     if (isNaN(amount)) return message.reply('Invalid amount.');
-    vouchData.set(targetUser.id, amount);
-    saveVouches(); // <-- persist changes
+    vouchData.set(targetUser.id, amount); // in-memory only
     return message.reply(`Set <@${targetUser.id}>'s vouches to **${amount}**.`);
   }
 });
