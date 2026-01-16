@@ -171,8 +171,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const role = interaction.guild.roles.cache.get(RECRUIT_ROLE_ID);
       if (role) await member.roles.add(role);
 
-      // PUBLIC message instead of ephemeral
+      // SEND PUBLIC MESSAGE in channel
       await interaction.channel.send(`<@${interaction.user.id}> has been recruited, go to https://discord.com/channels/1429006027466211408/1460301222446764204 to learn how to hit, also make sure to read the rules! https://discord.com/channels/1429006027466211408/1460301204440617284`);
+
+      // ACKNOWLEDGE interaction so Discord doesn't show "This interaction failed"
+      await interaction.deferUpdate();
+
     } catch (err) {
       console.error(err);
       if (!interaction.replied) await interaction.reply({ content: 'Error joining.', ephemeral: true });
