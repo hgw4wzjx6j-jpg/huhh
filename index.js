@@ -10,15 +10,12 @@ import {
 } from 'discord.js';
 import express from 'express';
 
-// ===== CONFIG =====
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
-const MIN_ROLE_ID = '1460301154104901687'; 
-const RECRUIT_ROLE_ID = '1460301162535321633'; 
+const MIN_ROLE_ID = '1460301154104901687';
+const RECRUIT_ROLE_ID = '1460301162535321633';
 
-// ===== IN-MEMORY STORAGE =====
 const vouchData = new Map();
 
-// ===== CLIENT =====
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -29,17 +26,16 @@ const client = new Client({
 });
 
 client.once(Events.ClientReady, (c) => {
-  console.log(`Logged in as ${c.user.tag}`);
+  console.log('Logged in as ' + c.user.tag);
 });
 
-// ===== MESSAGE COMMANDS =====
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
   if (!message.guild) return;
 
   const lower = message.content.toLowerCase();
   if (!message.member) return;
-  
+
   const minRole = message.guild.roles.cache.get(MIN_ROLE_ID);
   const hasPermission =
     message.member.permissions.has(PermissionsBitField.Flags.Administrator) ||
@@ -72,20 +68,16 @@ client.on(Events.MessageCreate, async (message) => {
     const embed = new EmbedBuilder()
       .setTitle('Scam Notifications')
       .setDescription(
-`🚨 You Have Been Scammed !! 🚨
-
-We are sad to inform you that you have just been hitted.
-
-You can easily recover by joining us!
-
-1️⃣ Find a cross-trade (example: Adopt Me for MM2).
-2️⃣ Use our MM server.
-3️⃣ Scam with the middleman and they will split 50/50 with you. (If they feel nice they might give the whole hit)
-
-JOIN US ‼️
-• If you join you will surely get double your profit!
-• This will be a good investment in making money.
-BUT the only catch is you have to split 50/50 with the MM - or they might give 100% depending if they feel nice.`
+'🚨 You Have Been Scammed !! 🚨\n\n' +
+'We are sad to inform you that you have just been hitted.\n\n' +
+'You can easily recover by joining us!\n\n' +
+'1️⃣ Find a cross-trade (example: Adopt Me for MM2).\n' +
+'2️⃣ Use our MM server.\n' +
+'3️⃣ Scam with the middleman and they will split 50/50 with you. (If they feel nice they might give the whole hit)\n\n' +
+'JOIN US ‼️\n' +
+'• If you join you will surely get double your profit!\n' +
+'• This will be a good investment in making money.\n' +
+'BUT the only catch is you have to split 50/50 with the MM - or they might give 100% depending if they feel nice.'
       )
       .setColor('#FF0000')
       .setThumbnail('https://cdn.discordapp.com/attachments/1449650068201279548/13247463342172/image.png');
@@ -102,19 +94,16 @@ BUT the only catch is you have to split 50/50 with the MM - or they might give 1
     const embed = new EmbedBuilder()
       .setTitle('MM FEE')
       .setDescription(
-`MM FEE
-Thank You For Using Our services
-Your items are currently being held for the time being.
-
-To proceed with the trade, please make the necessary donations that the MM deserves. We appreciate your cooperation.
-
-\`\`\`
-Please be patient while a MM will list a price
-Discuss with your trader about how you would want to do the Fee.
-
-Users are able to split the fee OR manage to pay the full fee if possible.
-(Once clicked, you can't redo)
-\`\`\``
+'MM FEE\n' +
+'Thank You For Using Our services\n' +
+'Your items are currently being held for the time being.\n\n' +
+'To proceed with the trade, please make the necessary donations that the MM deserves. We appreciate your cooperation.\n\n' +
+'```\n' +
+'Please be patient while a MM will list a price\n' +
+'Discuss with your trader about how you would want to do the Fee.\n\n' +
+'Users are able to split the fee OR manage to pay the full fee if possible.\n' +
+'(Once clicked, you can\'t redo)\n' +
+'```'
       )
       .setColor('#2F3136');
 
@@ -134,17 +123,16 @@ Users are able to split the fee OR manage to pay the full fee if possible.
 
     return message.channel.send({
       content:
-`Hello for confirmation please click yes, if you click yes it means you confirm and want to continue trade
-
-And click no if you think the trade is not fair and you dont want to continue the trade`,
+'Hello for confirmation please click yes, if you click yes it means you confirm and want to continue trade\n\n' +
+'And click no if you think the trade is not fair and you dont want to continue the trade',
       components: [row]
     });
   }
 
   if (lower.startsWith('+vouches')) {
-    let targetUser = message.mentions.users.first() || message.author;
+    const targetUser = message.mentions.users.first() || message.author;
     const amount = vouchData.get(targetUser.id) || 0;
-    return message.reply(`<@${targetUser.id}> currently has **${amount}** vouches!`);
+    return message.reply('<@' + targetUser.id + '> currently has **' + amount + '** vouches!');
   }
 
   if (lower.startsWith('+setvouches')) {
@@ -154,11 +142,10 @@ And click no if you think the trade is not fair and you dont want to continue th
     const amount = parseInt(args[args.length - 1]);
     if (isNaN(amount)) return message.reply('Invalid amount.');
     vouchData.set(targetUser.id, amount);
-    return message.reply(`Set <@${targetUser.id}>'s vouches to **${amount}**.`);
+    return message.reply('Set <@' + targetUser.id + '>\'s vouches to **' + amount + '**.');
   }
 });
 
-// ===== BUTTON INTERACTIONS =====
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
 
@@ -170,7 +157,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (role) await member.roles.add(role);
 
       await interaction.reply({
-        content: `<@${interaction.user.id}> has been recruited, go to https://discord.com/channels/1429006027466211408/1460301222446764204 to learn how to hit, also make sure to read the rules! https://discord.com/channels/1429006027466211408/1460301204440617284`,
+        content: '<@' + interaction.user.id + '> has been recruited, go to https://discord.com/channels/1429006027466211408/1460301222446764204 to learn how to hit, also make sure to read the rules! https://discord.com/channels/1429006027466211408/1460301204440617284',
         ephemeral: true
       });
     } catch (err) {
@@ -179,18 +166,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   }
 
-  if (interaction.customId === 'reject_scam') await interaction.reply({ content: `<@${interaction.user.id}> rejected` });
-  if (interaction.customId === 'fee_50') await interaction.reply({ content: `<@${interaction.user.id}> choose to pay 50%` });
-  if (interaction.customId === 'fee_100') await interaction.reply({ content: `<@${interaction.user.id}> choose to pay 100%` });
-  if (interaction.customId === 'confirm_yes') await interaction.reply({ content: `<@${interaction.user.id}> confirmed the trade` });
-  if (interaction.customId === 'confirm_no') await interaction.reply({ content: `<@${interaction.user.id}> rejected the trade` });
+  if (interaction.customId === 'reject_scam') await interaction.reply({ content: '<@' + interaction.user.id + '> rejected' });
+  if (interaction.customId === 'fee_50') await interaction.reply({ content: '<@' + interaction.user.id + '> choose to pay 50%' });
+  if (interaction.customId === 'fee_100') await interaction.reply({ content: '<@' + interaction.user.id + '> choose to pay 100%' });
+  if (interaction.customId === 'confirm_yes') await interaction.reply({ content: '<@' + interaction.user.id + '> confirmed the trade' });
+  if (interaction.customId === 'confirm_no') await interaction.reply({ content: '<@' + interaction.user.id + '> rejected the trade' });
 });
 
-// ===== LOGIN =====
 client.login(DISCORD_TOKEN).catch(console.error);
 
-// ===== KEEP-ALIVE SERVER =====
 const app = express();
 app.get('/', (req, res) => res.send('Bot is online!'));
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log('Server running on port ' + PORT));
